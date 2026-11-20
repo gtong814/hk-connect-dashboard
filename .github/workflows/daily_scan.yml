@@ -1,0 +1,35 @@
+name: 港股通每日16:10收市掃描
+
+on:
+  schedule:
+    # UTC 08:10 = 香港時間 16:10 (週一至週五)
+    - cron: '10 8 * * 1-5'
+  workflow_dispatch: # 允許隨時手動點擊觸發測試
+
+permissions:
+  contents: write
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出專案
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install yfinance pandas numpy
+
+      - name: 執行收市掃描
+        run: python scanner.py
+
+      - name: 儲存並推送最新報表
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add daily_scan.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "自動更新每日16:10收市掃描" && git push)
